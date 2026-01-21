@@ -2,7 +2,6 @@ import 'package:app/widgets/pose_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:app/controllers/graph_controller.dart';
 import 'package:flutter/material.dart' show Colors;
-import 'package:flutter/scheduler.dart';
 
 class SensorReadoutPage extends StatefulWidget {
   const SensorReadoutPage({super.key});
@@ -20,17 +19,9 @@ class _SensorReadoutPageState extends State<SensorReadoutPage> {
   static const Color borderColor = Color(0xFF27272A); // border-zinc-900 (approx)
   static const Color textColor = Colors.white;
   static const Color subtextColor = Color(0xFF71717A); // text-zinc-500
-  late Ticker ticker;
-  double elapsedSeconds = 0;
   @override
   void initState() {
     super.initState();
-     ticker = Ticker((elapsed) {
-      setState(() {
-        elapsedSeconds = elapsed.inMilliseconds.toDouble() / 1000;
-      });
-    });
-    ticker.start();
   }
 
   @override
@@ -85,7 +76,7 @@ class _SensorReadoutPageState extends State<SensorReadoutPage> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: PoseWidget(elapsedSeconds: elapsedSeconds)
+                  child: PoseWidget()
               ),
               )
             ],

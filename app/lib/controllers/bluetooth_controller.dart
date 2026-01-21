@@ -79,7 +79,7 @@ class BluetoothController extends GetxController {
       await device.connect();
       connectedDevice.value = device;
       isConnected.value = true;
-      device.services
+      await device.discoverServices();
       Get.log("Connected to ${device.platformName}");
     } catch (e) {
       Get.snackbar("Error", e.toString());
