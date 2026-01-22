@@ -1,6 +1,7 @@
 import 'package:app/routes/app_routes.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors; // Only using Colors if needed
+import 'package:flutter/material.dart'
+    show Colors; // Only using Colors if needed
 import 'package:get/get.dart';
 import 'package:app/controllers/bluetooth_controller.dart';
 import 'package:app/controllers/placement_controller.dart';
@@ -14,16 +15,18 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final BluetoothController bleController = Get.find<BluetoothController>();
-  final PlacementController placementController = Get.find<PlacementController>();
+  final PlacementController placementController =
+      Get.find<PlacementController>();
 
   // Colors from the design
   static const Color accentColor = Color(0xFFD17A4A);
   static const Color backgroundColor = Colors.black; // bg-black
   static const Color surfaceColor = Color(0xFF18181B); // bg-zinc-900 (approx)
-  static const Color borderColor = Color(0xFF27272A); // border-zinc-900 (approx)
+  static const Color borderColor = Color(
+    0xFF27272A,
+  ); // border-zinc-900 (approx)
   static const Color textColor = Colors.white;
   static const Color subtextColor = Color(0xFF71717A); // text-zinc-500
-  static const Color cardBorderColor = Color(0xFF3F3F46); // border-zinc-800
 
   // Images from App.tsx
   final List<Placement> bodyModes = placements;
@@ -70,7 +73,7 @@ class _HomePageState extends State<HomePage> {
                               letterSpacing: -0.5,
                             ),
                           ),
-                           Text(
+                          Text(
                             'Activity Monitor',
                             style: TextStyle(
                               color: subtextColor,
@@ -109,7 +112,13 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: cardBorderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -121,8 +130,12 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Obx(() {
                       return Icon(
-                        bleController.isScanning.value ? CupertinoIcons.bluetooth : CupertinoIcons.bluetooth, // Use appropriate icons
-                        color: bleController.isScanning.value ? accentColor : subtextColor,
+                        bleController.isScanning.value
+                            ? CupertinoIcons.bluetooth
+                            : CupertinoIcons.bluetooth, // Use appropriate icons
+                        color: bleController.isScanning.value
+                            ? accentColor
+                            : subtextColor,
                         size: 24,
                       );
                     }),
@@ -140,28 +153,36 @@ class _HomePageState extends State<HomePage> {
                               decoration: TextDecoration.none,
                             ),
                           ),
-                          Obx(() => Text(
-                            bleController.isScanning.value ? 'Scanning...' : 'Not connected',
-                            style: const TextStyle(
-                              color: subtextColor,
-                              fontSize: 14,
-                              decoration: TextDecoration.none,
+                          Obx(
+                            () => Text(
+                              bleController.isScanning.value
+                                  ? 'Scanning...'
+                                  : 'Not connected',
+                              style: const TextStyle(
+                                color: subtextColor,
+                                fontSize: 14,
+                                decoration: TextDecoration.none,
+                              ),
                             ),
-                          )),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
               ),
-              Obx(() => Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: bleController.isScanning.value ? accentColor : const Color(0xFF3F3F46), // zinc-700
-                  shape: BoxShape.circle,
+              Obx(
+                () => Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: bleController.isScanning.value
+                        ? accentColor
+                        : const Color(0xFF3F3F46), // zinc-700
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              )),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -175,20 +196,20 @@ class _HomePageState extends State<HomePage> {
                 color: isScanning ? const Color(0xFF27272A) : accentColor,
                 borderRadius: BorderRadius.circular(12),
                 onPressed: () {
-                    if (isScanning) {
-                        bleController.stopScan();
-                    } else {
-                        bleController.startScan();
-                        _showDevicePicker(context);
-                    }
+                  if (isScanning) {
+                    bleController.stopScan();
+                  } else {
+                    bleController.startScan();
+                    _showDevicePicker(context);
+                  }
                 },
                 child: Text(
-                   isScanning ? 'Stop Scanning' : 'Connect Device',
-                   style: TextStyle(
-                     fontSize: 16, 
-                     fontWeight: FontWeight.w500,
-                     color: isScanning ? subtextColor : Colors.black,
-                   ),
+                  isScanning ? 'Stop Scanning' : 'Connect Device',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: isScanning ? subtextColor : Colors.black,
+                  ),
                 ),
               ),
             );
@@ -228,14 +249,20 @@ class _HomePageState extends State<HomePage> {
         decoration: BoxDecoration(
           color: surfaceColor,
           borderRadius: BorderRadius.circular(12.0), // rounded-xl
-          border: Border.all(color: cardBorderColor),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         clipBehavior: Clip.antiAlias,
         child: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () {
-             placementController.placementSelected.value = mode;
-             Get.toNamed(AppRoutes.patchPlacement);
+            placementController.placementSelected.value = mode;
+            Get.toNamed(AppRoutes.patchPlacement);
           },
           child: Row(
             children: [
@@ -248,7 +275,8 @@ class _HomePageState extends State<HomePage> {
                   fit: BoxFit.cover,
                   color: const Color.fromRGBO(255, 255, 255, 0.6), // opacity-60
                   colorBlendMode: BlendMode.modulate,
-                  errorBuilder: (context, error, stackTrace) => Container(color: const Color(0xFF18181B)),
+                  errorBuilder: (context, error, stackTrace) =>
+                      Container(color: const Color(0xFF18181B)),
                 ),
               ),
               // Content section
@@ -268,9 +296,9 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       const Icon(
-                         CupertinoIcons.chevron_right,
-                         color: Color(0xFF52525B), // zinc-600
-                         size: 20,
+                        CupertinoIcons.chevron_right,
+                        color: Color(0xFF52525B), // zinc-600
+                        size: 20,
                       ),
                     ],
                   ),
@@ -339,7 +367,7 @@ class _HomePageState extends State<HomePage> {
                           decoration: BoxDecoration(
                             color: Colors.black,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: cardBorderColor),
+                            // border: Border.all(color: cardBorderColor), // Removing border for cleaner look
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -348,9 +376,9 @@ class _HomePageState extends State<HomePage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    data.device.platformName.isNotEmpty 
-                                      ? data.device.platformName 
-                                      : "Unknown Device",
+                                    data.device.platformName.isNotEmpty
+                                        ? data.device.platformName
+                                        : "Unknown Device",
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -360,22 +388,22 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                      data.device.remoteId.toString(),
-                                      style: const TextStyle(
-                                        color: subtextColor,
-                                        fontSize: 12,
-                                        decoration: TextDecoration.none,
-                                      ),
+                                    data.device.remoteId.toString(),
+                                    style: const TextStyle(
+                                      color: subtextColor,
+                                      fontSize: 12,
+                                      decoration: TextDecoration.none,
+                                    ),
                                   ),
                                 ],
                               ),
                               Text(
-                                  "${data.rssi} dBm",
-                                  style: const TextStyle(
-                                    color: accentColor,
-                                    fontSize: 14,
-                                    decoration: TextDecoration.none,
-                                  ),
+                                "${data.rssi} dBm",
+                                style: const TextStyle(
+                                  color: accentColor,
+                                  fontSize: 14,
+                                  decoration: TextDecoration.none,
+                                ),
                               ),
                             ],
                           ),

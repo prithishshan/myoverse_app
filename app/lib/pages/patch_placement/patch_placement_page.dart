@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:app/controllers/placement_controller.dart';
+import 'package:app/controllers/settings_controller.dart';
 import 'package:app/routes/app_routes.dart';
 
 class PatchPlacementPage extends StatelessWidget {
@@ -10,7 +11,10 @@ class PatchPlacementPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Find the controller that was initialized in HomePage
-    final PlacementController placementController = Get.find<PlacementController>();
+    final PlacementController placementController =
+        Get.find<PlacementController>();
+    final SettingsController settingsController =
+        Get.find<SettingsController>();
 
     // Design System Colors
     const Color surfaceColor = Color(0xFF18181B);
@@ -53,7 +57,13 @@ class PatchPlacementPage extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: surfaceColor,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFF3F3F46)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: Image.asset(
@@ -105,7 +115,6 @@ class PatchPlacementPage extends StatelessWidget {
                     width: double.infinity,
                     child: CupertinoButton.filled(
                       onPressed: () {
-
                         Get.offNamed(AppRoutes.sensorReadout);
                       },
                       borderRadius: BorderRadius.circular(12),

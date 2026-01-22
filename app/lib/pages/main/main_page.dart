@@ -20,19 +20,25 @@ class MainPage extends StatelessWidget {
         backgroundColor: const Color(0xFF18181B), // surfaceColor
         activeColor: const Color(0xFFD17A4A), // accentColor
         inactiveColor: const Color(0xFF71717A), // subtextColor
-        height: 60,
+        height: 50,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.graph_square),
-            label: 'Analytics',
+            icon: Padding(
+              padding: EdgeInsets.only(top: 10.0),
+              child: Icon(CupertinoIcons.graph_square),
+            ),
           ),
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.house_fill),
-            label: 'Home',
+            icon: Padding(
+              padding: EdgeInsets.only(top: 10.0),
+              child: Icon(CupertinoIcons.house_fill),
+            ),
           ),
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.settings),
-            label: 'Settings',
+            icon: Padding(
+              padding: EdgeInsets.only(top: 10.0),
+              child: Icon(CupertinoIcons.settings),
+            ),
           ),
         ],
       ),
