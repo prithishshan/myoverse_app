@@ -19,19 +19,22 @@ const List<Placement> placements = [
     id: 'shoulder',
     title: 'Shoulder',
     imageUrl: 'assets/patch_placement/shoulder.png',
-    directions: 'Place the patch on the upper part of your shoulder, ensuring it is securely attached to the skin.',
+    directions:
+        'Place the patch on the upper part of your shoulder, ensuring it is securely attached to the skin.',
   ),
   Placement(
     id: 'leg',
     title: 'Leg',
     imageUrl: 'assets/patch_placement/leg.png',
-    directions: 'Place the patch on the top side of your leg about two inches above your knee, ensuring it is securely attached to the skin.',
+    directions:
+        'Place the patch on the top side of your leg about two inches above your knee, ensuring it is securely attached to the skin.',
   ),
   Placement(
     id: 'wrist',
     title: 'Wrist',
     imageUrl: 'assets/patch_placement/wrist.png',
-    directions: 'Place the patch on the back of your wrist, ensuring it is securely attached to the skin.',
+    directions:
+        'Place the patch on the back of your wrist, ensuring it is securely attached to the skin.',
   ),
 ];
 
@@ -42,6 +45,11 @@ class PlacementController extends GetxController {
   }
 
   final placementSelected = Rxn<Placement>();
+  final isMale = true.obs;
+  final isFrontView = true.obs;
+
+  void toggleGender() => isMale.value = !isMale.value;
+  void toggleView() => isFrontView.value = !isFrontView.value;
 
   void onClose() {
     super.onClose();

@@ -1,10 +1,13 @@
 import 'package:app/routes/app_routes.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:app/widgets/some_muscles.dart';
 import 'package:flutter/material.dart'
     show Colors; // Only using Colors if needed
 import 'package:get/get.dart';
 import 'package:app/controllers/bluetooth_controller.dart';
 import 'package:app/controllers/placement_controller.dart';
+import 'package:app/widgets/bluetooth_widgets.dart';
+import 'package:app/widgets/interactive_svg_viewer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -38,57 +41,6 @@ class _HomePageState extends State<HomePage> {
       child: CustomScrollView(
         slivers: [
           // Header
-          // Header
-          SliverToBoxAdapter(
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 0.0),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6.0),
-                      decoration: BoxDecoration(
-                        color: accentColor,
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      child: const Icon(
-                        CupertinoIcons.bolt_horizontal_circle_fill,
-                        color: Colors.black,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'MyoVerse',
-                            style: TextStyle(
-                              color: textColor,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          Text(
-                            'Activity Monitor',
-                            style: TextStyle(
-                              color: subtextColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
 
           // Main Content
           SliverPadding(
@@ -107,115 +59,47 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildBluetoothCard() {
-    return Container(
-      padding: const EdgeInsets.all(24.0),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(16.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+          child: Text(
+            'Devices',
+            style: TextStyle(
+              color: Color(0xFFA1A1AA), // zinc-400
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              decoration: TextDecoration.none,
+            ),
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Obx(() {
-                      return Icon(
-                        bleController.isScanning.value
-                            ? CupertinoIcons.bluetooth
-                            : CupertinoIcons.bluetooth, // Use appropriate icons
-                        color: bleController.isScanning.value
-                            ? accentColor
-                            : subtextColor,
-                        size: 24,
-                      );
-                    }),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Device Connection',
-                            style: TextStyle(
-                              color: textColor,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              decoration: TextDecoration.none,
-                            ),
-                          ),
-                          Obx(
-                            () => Text(
-                              bleController.isScanning.value
-                                  ? 'Scanning...'
-                                  : 'Not connected',
-                              style: const TextStyle(
-                                color: subtextColor,
-                                fontSize: 14,
-                                decoration: TextDecoration.none,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Obx(
-                () => Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: bleController.isScanning.value
-                        ? accentColor
-                        : const Color(0xFF3F3F46), // zinc-700
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Obx(() {
-            bool isScanning = bleController.isScanning.value;
-            // Use CupertinoButton.filled for primary action loop
-            return SizedBox(
-              width: double.infinity,
-              child: CupertinoButton(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                color: isScanning ? const Color(0xFF27272A) : accentColor,
-                borderRadius: BorderRadius.circular(12),
-                onPressed: () {
-                  if (isScanning) {
-                    bleController.stopScan();
-                  } else {
-                    bleController.startScan();
-                    _showDevicePicker(context);
-                  }
-                },
-                child: Text(
-                  isScanning ? 'Stop Scanning' : 'Connect Device',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: isScanning ? subtextColor : Colors.black,
-                  ),
-                ),
-              ),
+        ),
+        SizedBox(
+          height: 70,
+          child: Obx(() {
+            return ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: bleController.connectedDevices.length + 1,
+              itemBuilder: (context, index) {
+                if (index < bleController.connectedDevices.length) {
+                  final device = bleController.connectedDevices[index];
+                  return ConnectedDeviceCard(
+                    device: device,
+                    onDisconnect: () => bleController.disconnectDevice(device),
+                  );
+                } else {
+                  return AddDeviceCard(
+                    onTap: () {
+                      bleController.startScan();
+                      _showDevicePicker(context);
+                    },
+                  );
+                }
+              },
             );
           }),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -235,8 +119,50 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        ...bodyModes.map((mode) => _buildBodyModeCard(mode)),
+        SizedBox(
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CupertinoButton(
+                    child: Text('Toggle Gender'),
+                    onPressed: () => placementController.toggleGender(),
+                  ),
+                  CupertinoButton(
+                    child: Text('Toggle View'),
+                    onPressed: () => placementController.toggleView(),
+                  ),
+                ],
+              ),
+              // Scale 0.3 maps the approx 3.3x coordinate range to the viewport.
+              Container(
+                width: 450,
+                height: 600,
+                color: Colors.transparent, // helper background to see bounds
+                child: InteractiveSvgViewer(
+                  assetPath: 'assets/body_model/male/male_front_muscles.svg',
+                  outlineAssetPath:
+                      'assets/body_model/male/male_front_outline.svg',
+                  onPartTap: (id) {
+                    print('Tapped muscle part: $id');
+                    // show a snackbar or similar
+                    Get.snackbar(
+                      'Muscle Selected',
+                      'ID: $id',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.white,
+                      colorText: Colors.black,
+                      duration: const Duration(milliseconds: 1500),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        // const SizedBox(height: 12),
+        // ...bodyModes.map((mode) => _buildBodyModeCard(mode)),
       ],
     );
   }

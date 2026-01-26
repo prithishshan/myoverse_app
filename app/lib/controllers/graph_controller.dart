@@ -35,25 +35,24 @@ class RingBuffer {
 
 class LineGraphPainter extends CustomPainter {
   LineGraphPainter({
-    required this.buffer,
+    required this.buffers,
     required this.strokeWidth,
     required this.padding,
-    this.lineColor = Colors.white,
+    required this.lineColors,
     this.fixedMin,
     this.fixedMax,
     required Listenable repaint,
   }) : super(repaint: repaint);
 
-  final RingBuffer buffer;
+  final List<RingBuffer> buffers;
   final double strokeWidth;
   final EdgeInsets padding;
-  final Color lineColor;
+  final List<Color> lineColors;
   final double? fixedMin;
   final double? fixedMax;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final samples = buffer.getListOldestToNewest();
     final rect = Rect.fromLTWH(
       padding.left,
       padding.top,
@@ -62,64 +61,66 @@ class LineGraphPainter extends CustomPainter {
     );
     if (rect.width <= 0 || rect.height <= 0) return;
 
-    if (samples.length < 2) return;
+    for (int j = 0; j < buffers.length; j++) {
+      final buffer = buffers[j];
+      final samples = buffer.getListOldestToNewest();
 
-    final minV = fixedMin ?? samples.reduce(math.min);
-    final maxV = fixedMax ?? samples.reduce(math.max);
-    final range = (maxV - minV).abs() < 1e-9 ? 1.0 : (maxV - minV);
+      if (samples.length < 2) continue;
 
-    final path = Path();
-    for (int i = 0; i < samples.length; i++) {
-      final t = i / (samples.length - 1);
-      final x = rect.left + t * rect.width;
+      final minV = fixedMin ?? samples.reduce(math.min);
+      final maxV = fixedMax ?? samples.reduce(math.max);
+      final range = (maxV - minV).abs() < 1e-9 ? 1.0 : (maxV - minV);
 
-      final yNorm = (samples[i] - minV) / range; // 0..1
-      final y = rect.bottom - yNorm * rect.height;
+      final path = Path();
+      for (int i = 0; i < samples.length; i++) {
+        final t = i / (samples.length - 1);
+        final x = rect.left + t * rect.width;
 
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
+        final yNorm = (samples[i] - minV) / range; // 0..1
+        final y = rect.bottom - yNorm * rect.height;
+
+        if (i == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
       }
+
+      final color = j < lineColors.length ? lineColors[j] : Colors.white;
+
+      final line = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..isAntiAlias = true
+        ..color = color;
+
+      canvas.drawPath(path, line);
     }
-
-    final line = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..isAntiAlias = true
-      ..color = lineColor;
-
-    canvas.drawPath(path, line);
   }
 
   @override
   bool shouldRepaint(covariant LineGraphPainter oldDelegate) {
-    return oldDelegate.buffer != buffer ||
-        oldDelegate.strokeWidth != strokeWidth ||
-        oldDelegate.padding != padding ||
-        oldDelegate.lineColor != lineColor ||
-        oldDelegate.fixedMin != fixedMin ||
-        oldDelegate.fixedMax != fixedMax;
+    return true; // Simple approach, triggers on frame tick anyway
   }
 }
 
 class SensorLineGraph extends StatefulWidget {
   const SensorLineGraph({
     super.key,
-    required this.stream,
+    required this.streams,
     this.hz = 100,
     this.windowSeconds = 5,
     this.repaintFps = 60,
     this.strokeWidth = 2,
     this.padding = const EdgeInsets.all(12),
-    this.lineColor = Colors.white,
+    this.lineColors = const [Colors.white],
     this.fixedMin,
     this.fixedMax,
   });
 
-  final Stream<double> stream;
+  final List<Stream<double>> streams;
 
   /// Your sampling rate (100 Hz).
   final int hz;
@@ -132,7 +133,7 @@ class SensorLineGraph extends StatefulWidget {
 
   final double strokeWidth;
   final EdgeInsets padding;
-  final Color lineColor;
+  final List<Color> lineColors;
   final double? fixedMin;
   final double? fixedMax;
 
@@ -141,8 +142,8 @@ class SensorLineGraph extends StatefulWidget {
 }
 
 class _SensorLineGraphState extends State<SensorLineGraph> {
-  late RingBuffer _buf;
-  StreamSubscription<double>? _sub;
+  late List<RingBuffer> _buffers;
+  final List<StreamSubscription<double>> _subs = [];
 
   // Use a notifier purely to drive painter repaints.
   final ValueNotifier<int> _frame = ValueNotifier<int>(0);
@@ -153,17 +154,34 @@ class _SensorLineGraphState extends State<SensorLineGraph> {
   @override
   void initState() {
     super.initState();
-    _rebuildBuffer();
-    _sub = widget.stream.listen((v) {
-      _buf.add(v);
-      _dirty = true; // mark that we have new data
-    });
+    _rebuildBuffers();
+    _subscribeStreams();
     _startRepaintTimer();
   }
 
-  void _rebuildBuffer() {
-    // final cap = widget.hz * widget.windowSeconds; // e.g., 100*5=500
-    _buf = RingBuffer(widget.hz, widget.windowSeconds);
+  void _rebuildBuffers() {
+    _buffers = List.generate(
+      widget.streams.length,
+      (_) => RingBuffer(widget.hz, widget.windowSeconds),
+    );
+  }
+
+  void _subscribeStreams() {
+    for (var sub in _subs) {
+      sub.cancel();
+    }
+    _subs.clear();
+
+    for (int i = 0; i < widget.streams.length; i++) {
+      _subs.add(
+        widget.streams[i].listen((v) {
+          if (i < _buffers.length) {
+            _buffers[i].add(v);
+            _dirty = true;
+          }
+        }),
+      );
+    }
   }
 
   void _startRepaintTimer() {
@@ -181,25 +199,17 @@ class _SensorLineGraphState extends State<SensorLineGraph> {
   void didUpdateWidget(covariant SensorLineGraph oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // final needsNewBuffer 
-    //     oldWidget.hz != widget.hz ||
-    //     oldWidget.windowSeconds != widget.windowSeconds;
-    // if (needsNewBuffer) _rebuildBuffer();
-
-    // if (oldWidget.repaintFps != widget.repaintFps) _startRepaintTimer();
-
-    if (oldWidget.stream != widget.stream) {
-      _sub?.cancel();
-      _sub = widget.stream.listen((v) {
-        _buf.add(v);
-        _dirty = true;
-      });
+    if (oldWidget.streams != widget.streams) {
+      _rebuildBuffers(); // Might need to clear if count changes
+      _subscribeStreams();
     }
   }
 
   @override
   void dispose() {
-    _sub?.cancel();
+    for (var sub in _subs) {
+      sub.cancel();
+    }
     _timer?.cancel();
     _frame.dispose();
     super.dispose();
@@ -207,16 +217,13 @@ class _SensorLineGraphState extends State<SensorLineGraph> {
 
   @override
   Widget build(BuildContext context) {
-    // Convert once per build; build only occurs at repaintFps due to _frame.
-    // final samples = _buf.getListOldestToNewest();
-
     return RepaintBoundary(
       child: CustomPaint(
         painter: LineGraphPainter(
-          buffer: _buf,
+          buffers: _buffers,
           strokeWidth: widget.strokeWidth,
           padding: widget.padding,
-          lineColor: widget.lineColor,
+          lineColors: widget.lineColors,
           fixedMin: widget.fixedMin,
           fixedMax: widget.fixedMax,
           repaint: _frame,

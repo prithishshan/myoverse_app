@@ -1,0 +1,6 @@
+svg id='Layer_1' label='' children=4
+  g id='woman_2' label='' children=49
+  g id='woman_1' label='' children=67
+    g id='' label='' children=2
+  g id='man_2' label='' children=47
+  g id='man_1' label='' children=66
