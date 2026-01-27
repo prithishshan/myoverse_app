@@ -52,6 +52,8 @@ class _InteractiveSvgViewerState extends State<InteractiveSvgViewer> {
       final data = await _parser.parseFromAsset(widget.assetPath);
       setState(() {
         _data = data;
+        print("Svg has:");
+        print(data.parts);
         _isLoading = false;
       });
     } catch (e) {
@@ -111,18 +113,19 @@ class _InteractiveSvgViewerState extends State<InteractiveSvgViewer> {
     }
 
     if (_data == null || _data!.parts.isEmpty) {
-      return const Center(child: Text('No skeletal data found.'));
+      return const Center(child: Text('No Muscle data found.'));
     }
 
     // Use the parsed SVG viewbox size if available, otherwise fallback to path bounds
     Size canvasSize = _data!.size;
-    if (canvasSize == Size.zero) {
-      // Fallback: calculate from paths
-      Rect totalBounds = _data!.parts.first.path.getBounds();
-      for (var p in _data!.parts)
-        totalBounds = totalBounds.expandToInclude(p.path.getBounds());
-      canvasSize = Size(totalBounds.right, totalBounds.bottom);
-    }
+    // if (canvasSize == Size.zero) {
+    //   // Fallback: calculate from paths
+    //   Rect totalBounds = _data!.parts.first.path.getBounds();
+    //   for (var p in _data!.parts) {
+    //     totalBounds = totalBounds.expandToInclude(p.path.getBounds());
+    //   }
+    //   canvasSize = Size(totalBounds.right, totalBounds.bottom);
+    // }
 
     return FittedBox(
       fit: BoxFit.contain,
@@ -132,12 +135,11 @@ class _InteractiveSvgViewerState extends State<InteractiveSvgViewer> {
         child: Stack(
           children: [
             // Bottom Layer: Static Outline
-            if (widget.outlineAssetPath != null)
+            if (widget.outlineAssetPath != null) 
               Positioned.fill(
                 child: SvgPicture.asset(
                   widget.outlineAssetPath!,
-                  fit: BoxFit
-                      .fill, // Ensure it fills the exact viewBox size coordinates
+                  fit: BoxFit.fill, // Ensure it fills the exact viewBox size coordinates
                   width: canvasSize.width,
                   height: canvasSize.height,
                   colorFilter: ColorFilter.mode(
