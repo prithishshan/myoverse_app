@@ -7,13 +7,13 @@ class InteractiveSvgViewer extends StatefulWidget {
   final String assetPath;
   final String? outlineAssetPath;
   final Color outlineColor;
-  final Function(String id)? onPartTap;
+  final Function(String groupId)? onPartTap; // Returns Group ID
 
   const InteractiveSvgViewer({
     Key? key,
     required this.assetPath,
     this.outlineAssetPath,
-    this.outlineColor = const Color(0xFFD17A4A),
+    this.outlineColor = Colors.white,
     this.onPartTap,
   }) : super(key: key);
 
@@ -26,7 +26,7 @@ class _InteractiveSvgViewerState extends State<InteractiveSvgViewer> {
   ParsedSvgData? _data;
   String? _loadingError;
   bool _isLoading = true;
-  String? _highlightedId;
+  List<String> _highlightedIds = []; // List of IDs to highlight
 
   @override
   void initState() {
@@ -95,10 +95,25 @@ class _InteractiveSvgViewerState extends State<InteractiveSvgViewer> {
     }
 
     if (tappedId != null) {
+      // Find the group this part belongs to
+      String groupId = tappedId;
+      List<String> groupPartIds = [tappedId];
+
+      try {
+        final group = _data!.groups.firstWhere(
+          (g) => g.parts.any((p) => p.id == tappedId),
+        );
+        groupId = group.id;
+        groupPartIds = group.parts.map((p) => p.id).toList();
+      } catch (e) {
+        // Fallback if no group found (shouldn't happen with our parser logic)
+        debugPrint("No group found for $tappedId");
+      }
+
       setState(() {
-        _highlightedId = tappedId;
+        _highlightedIds = groupPartIds;
       });
-      widget.onPartTap?.call(tappedId);
+      widget.onPartTap?.call(groupId);
     }
   }
 
@@ -135,11 +150,12 @@ class _InteractiveSvgViewerState extends State<InteractiveSvgViewer> {
         child: Stack(
           children: [
             // Bottom Layer: Static Outline
-            if (widget.outlineAssetPath != null) 
+            if (widget.outlineAssetPath != null)
               Positioned.fill(
                 child: SvgPicture.asset(
                   widget.outlineAssetPath!,
-                  fit: BoxFit.fill, // Ensure it fills the exact viewBox size coordinates
+                  fit: BoxFit
+                      .fill, // Ensure it fills the exact viewBox size coordinates
                   width: canvasSize.width,
                   height: canvasSize.height,
                   colorFilter: ColorFilter.mode(
@@ -156,7 +172,7 @@ class _InteractiveSvgViewerState extends State<InteractiveSvgViewer> {
                 size: canvasSize,
                 painter: GenericSvgPainter(
                   parts: _data!.parts,
-                  highlightedPartId: _highlightedId,
+                  highlightedPartIds: _highlightedIds,
                 ),
               ),
             ),

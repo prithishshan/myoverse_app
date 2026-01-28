@@ -7,3 +7,10 @@ class MusclePart {
 
   MusclePart({required this.id, required this.path, this.defaultColor});
 }
+
+class MuscleGroup {
+  final String id;
+  final List<MusclePart> parts;
+
+  MuscleGroup({required this.id, required this.parts});
+}

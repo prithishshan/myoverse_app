@@ -6,9 +6,14 @@ import 'package:app/models/muscle_part.dart';
 
 class ParsedSvgData {
   final List<MusclePart> parts;
+  final List<MuscleGroup> groups; // [NEW]
   final Size size;
 
-  ParsedSvgData({required this.parts, required this.size});
+  ParsedSvgData({
+    required this.parts,
+    required this.groups, // [NEW]
+    required this.size,
+  });
 }
 
 class SvgParser {
@@ -65,7 +70,34 @@ class SvgParser {
         }
       }
 
-      return ParsedSvgData(parts: parts, size: size);
+      // Logic to creating groups
+      final Map<String, List<MusclePart>> groupedParts = {};
+
+      for (var part in parts) {
+        String groupId = part.id;
+        final segments = part.id.split('_');
+
+        // If id is side_group_part (3 segments or more), group is side_group
+        // Example: right_bicep_long -> right_bicep
+        if (segments.length >= 3) {
+          groupId = "${segments[0]}_${segments[1]}";
+        } else {
+          // If id is side_group (2 segments), it is its own group
+          // Example: right_pectoral -> right_pectoral
+          groupId = part.id; // Or maybe segments[0]_segments[1] if exists
+        }
+
+        if (!groupedParts.containsKey(groupId)) {
+          groupedParts[groupId] = [];
+        }
+        groupedParts[groupId]!.add(part);
+      }
+
+      final List<MuscleGroup> groups = groupedParts.entries.map((e) {
+        return MuscleGroup(id: e.key, parts: e.value);
+      }).toList();
+
+      return ParsedSvgData(parts: parts, groups: groups, size: size);
     } catch (e) {
       print('Error parsing SVG asset $assetPath: $e');
       rethrow;

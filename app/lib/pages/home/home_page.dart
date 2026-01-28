@@ -107,34 +107,38 @@ class _HomePageState extends State<HomePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
-          child: Text(
-            'Body Modes',
-            style: TextStyle(
-              color: Color(0xFFA1A1AA), // zinc-400
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              decoration: TextDecoration.none,
-            ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Body Modes',
+                style: TextStyle(
+                  color: Color(0xFFA1A1AA), // zinc-400
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  decoration: TextDecoration.none,
+                ),
+              ),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                minSize: 0,
+                onPressed: () => placementController.toggleView(),
+                child: const Icon(
+                  CupertinoIcons.arrow_2_circlepath,
+                  color: accentColor,
+                  size: 24,
+                ),
+              ),
+            ],
           ),
         ),
         SizedBox(
           child: Column(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CupertinoButton(
-                    child: Text('Toggle Gender'),
-                    onPressed: () => placementController.toggleGender(),
-                  ),
-                  CupertinoButton(
-                    child: Text('Toggle View'),
-                    onPressed: () => placementController.toggleView(),
-                  ),
-                ],
-              ),
+              // Row with buttons removed
+
               // Scale 0.3 maps the approx 3.3x coordinate range to the viewport.
               Container(
                 width: 450,
@@ -146,15 +150,25 @@ class _HomePageState extends State<HomePage> {
                       'assets/body_model/male/male_front_outline.svg',
                   onPartTap: (id) {
                     print('Tapped muscle part: $id');
-                    // show a snackbar or similar
-                    Get.snackbar(
-                      'Muscle Selected',
-                      'ID: $id',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: Colors.white,
-                      colorText: Colors.black,
-                      duration: const Duration(milliseconds: 1500),
+
+                    // Create a temporary placement for the selected muscle
+                    final placement = Placement(
+                      id: id,
+                      title: id
+                          .split('_')
+                          .map(
+                            (word) => word[0].toUpperCase() + word.substring(1),
+                          )
+                          .join(' '),
+                      imageUrl:
+                          "assets/body_model/male/male_front_muscles.svg", // Fallback/Default
+                      directions: "Sensor placement for $id",
                     );
+
+                    placementController.placementSelected.value = placement;
+
+                    // Navigate immediately to sensor readout
+                    Get.toNamed(AppRoutes.sensorReadout);
                   },
                 ),
               ),

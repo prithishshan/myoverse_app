@@ -3,9 +3,10 @@ import 'package:app/models/muscle_part.dart';
 
 class GenericSvgPainter extends CustomPainter {
   final List<MusclePart> parts;
-  final String? highlightedPartId;
+  final List<String> highlightedPartIds;
 
-  GenericSvgPainter({required this.parts, this.highlightedPartId});
+  GenericSvgPainter({required this.parts, List<String>? highlightedPartIds})
+    : highlightedPartIds = highlightedPartIds ?? const [];
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -23,7 +24,7 @@ class GenericSvgPainter extends CustomPainter {
     for (var part in parts) {
       final Rect bounds = part.path.getBounds();
 
-      if (highlightedPartId == part.id) {
+      if (highlightedPartIds.contains(part.id)) {
         // Highlighted Gradient (Bright Orange/Yellow)
         paint.shader = RadialGradient(
           center: Alignment.center,
@@ -40,7 +41,7 @@ class GenericSvgPainter extends CustomPainter {
           // Keep outline simply stroked
           paint.shader = null;
           paint.style = PaintingStyle.stroke;
-          paint.color = Colors.black;
+          paint.color = Colors.white; // White outline
           paint.strokeWidth = 2.0;
         } else {
           paint.style = PaintingStyle.fill;
@@ -52,7 +53,7 @@ class GenericSvgPainter extends CustomPainter {
             colors: [
               baseColor.withOpacity(0.8), // Slightly lighter top-left
               baseColor, // Base color
-              Colors.black, // Darker shadow
+              Colors.grey[900]!, // Darker shadow (Gray instead of Black)
             ],
             stops: const [0.0, 0.6, 1.0],
           ).createShader(bounds);
@@ -66,7 +67,7 @@ class GenericSvgPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant GenericSvgPainter oldDelegate) {
     return oldDelegate.getAllPartsHash() != getAllPartsHash() ||
-        oldDelegate.highlightedPartId != highlightedPartId;
+        oldDelegate.highlightedPartIds != highlightedPartIds;
   }
 
   int getAllPartsHash() {
