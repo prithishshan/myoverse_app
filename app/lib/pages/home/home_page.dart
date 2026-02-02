@@ -32,7 +32,7 @@ class _HomePageState extends State<HomePage> {
   static const Color subtextColor = Color(0xFF71717A); // text-zinc-500
 
   // Images from App.tsx
-  final List<Placement> bodyModes = placements;
+  // final List<Placement> bodyModes = placements;
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +84,7 @@ class _HomePageState extends State<HomePage> {
                 if (index < bleController.connectedDevices.length) {
                   final device = bleController.connectedDevices[index];
                   return ConnectedDeviceCard(
-                    device: device,
+                    device: device.bluetoothDevice,
                     onDisconnect: () => bleController.disconnectDevice(device),
                   );
                 } else {

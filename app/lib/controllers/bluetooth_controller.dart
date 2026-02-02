@@ -3,13 +3,27 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:get/get.dart';
 
+class MyoDevice {
+  final BluetoothDevice bluetoothDevice;
+  // final String name;
+  String? placement;
+  final int id;
+
+  MyoDevice({
+    required this.bluetoothDevice,
+    // required this.name,
+    required this.id,
+  });
+}
+
 class BluetoothController extends GetxController {
   // Observable list of scan results to update UI automatically
   final scanResults = <ScanResult>[].obs;
   // Observable scanning state
   final isScanning = false.obs;
-  final connectedDevices = <BluetoothDevice>[].obs;
+  final connectedDevices = <MyoDevice>[].obs;
   StreamSubscription? scanSubscription;
+  int deviceIdCounter = 0;
 
   bool get isConnected => connectedDevices.isNotEmpty;
 
@@ -76,14 +90,18 @@ class BluetoothController extends GetxController {
 
   Future<void> connectToDevice(BluetoothDevice device) async {
     // Check if already connected
-    if (connectedDevices.contains(device)) {
-      Get.snackbar("Info", "Device already connected");
-      return;
+    for (var myoDevice in connectedDevices) {
+      if (myoDevice.bluetoothDevice == device) {
+        Get.snackbar("Info", "Device already connected");
+        return;
+      }
     }
 
     try {
       await device.connect();
-      connectedDevices.add(device);
+
+      connectedDevices.add(MyoDevice(bluetoothDevice: device, id: deviceIdCounter));
+      deviceIdCounter++;
       // isConnected logic might need to be derived from list length or individual device state
       // For now, if at least one is connected, we can consider 'some' connection active if needed
       // But usually we just care about the list.
@@ -94,11 +112,17 @@ class BluetoothController extends GetxController {
     }
   }
 
-  Future<void> disconnectDevice(BluetoothDevice device) async {
+  Future<void> disconnectDevice(MyoDevice device) async {
     try {
-      await device.disconnect();
-      connectedDevices.remove(device);
-      Get.log("Disconnected from ${device.platformName}");
+      await device.bluetoothDevice.disconnect();
+      for (var myoDevice in connectedDevices) {
+        if (myoDevice.id == device.id) {
+          connectedDevices.remove(myoDevice);
+          break;
+        }
+      }
+      // connectedDevices.remove(device);
+      Get.log("Disconnected from ${device.bluetoothDevice.platformName}");
     } catch (e) {
       Get.snackbar("Error", "Failed to disconnect: $e");
     }
