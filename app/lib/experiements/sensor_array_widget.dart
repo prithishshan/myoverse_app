@@ -133,9 +133,12 @@ class SensorArrayPainter extends CustomPainter {
           color = Color.lerp(Colors.orange, Colors.red, t)!;
         }
 
+        final Color baseColor = color;
         final Paint paint = Paint()
-          ..color = color
-              .withOpacity(0.9 * value + 0.1) // Minimum slight visibility
+          ..color = baseColor
+              .withAlpha(
+                (255 * (0.9 * value + 0.1)).toInt(),
+              ) // Minimum slight visibility
           ..style = PaintingStyle.fill;
 
         final Paint borderPaint = Paint()

@@ -2,17 +2,17 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:app/utils/svg_parser.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:app/models/muscle_part.dart';
 
 class BilateralMuscleWidget extends StatefulWidget {
   const BilateralMuscleWidget({
     super.key,
     required this.streams,
     required this.avgStreams,
-    this.outlineAsset = 'assets/body_model/male/male_front_outline.svg',
-    this.muscleAsset = 'assets/body_model/male/male_front_muscles.svg',
+    required this.leftMuscleGroup,
+    required this.rightMuscleGroup,
   });
 
   /// 12 streams: 0-5 (Left), 6-11 (Right)
@@ -20,8 +20,12 @@ class BilateralMuscleWidget extends StatefulWidget {
 
   /// 2 average streams: 0 (Left), 1 (Right)
   final List<Stream<double>> avgStreams;
-  final String outlineAsset;
-  final String muscleAsset;
+
+  /// Left muscle group data
+  final MuscleGroup leftMuscleGroup;
+
+  /// Right muscle group data
+  final MuscleGroup rightMuscleGroup;
 
   @override
   State<BilateralMuscleWidget> createState() => _BilateralMuscleWidgetState();
@@ -29,33 +33,26 @@ class BilateralMuscleWidget extends StatefulWidget {
 
 class _BilateralMuscleWidgetState extends State<BilateralMuscleWidget>
     with SingleTickerProviderStateMixin {
-  // SVG Data
   bool _loaded = false;
 
-  // Muscle Paths
   List<Path> _leftPaths = [];
   List<Path> _rightPaths = [];
   Rect _contentBounds = Rect.zero;
 
-  // Stream Simulations
   final List<StreamSubscription> _subs = [];
   final List<double> _currents = List.filled(12, 0.0);
   final List<double> _targets = List.filled(12, 0.0);
-  final List<double> _avgs = List.filled(2, 0.0); // 0: Left, 1: Right
+  final List<double> _avgs = List.filled(2, 0.0);
   final List<double> _avgTargets = List.filled(2, 0.0);
-  final SvgParser _parser = SvgParser();
 
   late AnimationController _controller;
 
-  // Heatmap Positions (Normalized roughly to the muscle shape bounds)
+  // Heatmap Positions (Normalized to muscle shape bounds)
   final List<Offset> _relativePositions = [
-    // Anterior
     const Offset(0.3, 0.3),
     const Offset(0.4, 0.4),
-    // Lateral
     const Offset(0.5, 0.5),
     const Offset(0.6, 0.4),
-    // Posterior
     const Offset(0.7, 0.6),
     const Offset(0.5, 0.7),
   ];
@@ -63,7 +60,7 @@ class _BilateralMuscleWidgetState extends State<BilateralMuscleWidget>
   @override
   void initState() {
     super.initState();
-    _loadSpecificSvg();
+    _loadMuscleData();
     _subscribeStreams();
 
     _controller = AnimationController(
@@ -96,23 +93,11 @@ class _BilateralMuscleWidgetState extends State<BilateralMuscleWidget>
     }
   }
 
-  Future<void> _loadSpecificSvg() async {
+  void _loadMuscleData() {
     try {
-      final data = await _parser.parseSpecificFromAsset(widget.muscleAsset, [
-        'left_bicep_short',
-        'left_bicep_long',
-        'right_bicep_short',
-        'right_bicep_long',
-      ]);
-
-      final left = data.parts
-          .where((p) => p.id.startsWith('left'))
-          .map((p) => p.path)
-          .toList();
-      final right = data.parts
-          .where((p) => p.id.startsWith('right'))
-          .map((p) => p.path)
-          .toList();
+      // Extract paths from injected muscle groups
+      final left = widget.leftMuscleGroup.parts.map((p) => p.path).toList();
+      final right = widget.rightMuscleGroup.parts.map((p) => p.path).toList();
 
       // Calculate bounds of the muscles to zoom in on them
       Rect bounds = Rect.zero;
@@ -136,7 +121,7 @@ class _BilateralMuscleWidgetState extends State<BilateralMuscleWidget>
         });
       }
     } catch (e) {
-      debugPrint('Error loading Bilateral SVG: $e');
+      debugPrint('Error loading Bilateral muscle data: $e');
     }
   }
 
@@ -167,8 +152,28 @@ class _BilateralMuscleWidgetState extends State<BilateralMuscleWidget>
   }
 
   @override
+  void didUpdateWidget(covariant BilateralMuscleWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.leftMuscleGroup.id != widget.leftMuscleGroup.id ||
+        oldWidget.rightMuscleGroup.id != widget.rightMuscleGroup.id) {
+      _loaded = false;
+      _loadMuscleData();
+    }
+    if (oldWidget.streams != widget.streams ||
+        oldWidget.avgStreams != widget.avgStreams) {
+      for (var sub in _subs) {
+        sub.cancel();
+      }
+      _subs.clear();
+      _subscribeStreams();
+    }
+  }
+
+  @override
   void dispose() {
-    for (var sub in _subs) sub.cancel();
+    for (var sub in _subs) {
+      sub.cancel();
+    }
     _controller.dispose();
     super.dispose();
   }
@@ -183,10 +188,7 @@ class _BilateralMuscleWidgetState extends State<BilateralMuscleWidget>
       builder: (context, constraints) {
         return Row(
           children: [
-            // LEFT BAR
             _buildBar(_avgs[0]),
-
-            // MUSCLE VIEW
             Expanded(
               child: CustomPaint(
                 painter: BilateralMusclePainter(
@@ -199,8 +201,6 @@ class _BilateralMuscleWidgetState extends State<BilateralMuscleWidget>
                 size: Size.infinite,
               ),
             ),
-
-            // RIGHT BAR
             _buildBar(_avgs[1]),
           ],
         );
@@ -209,7 +209,6 @@ class _BilateralMuscleWidgetState extends State<BilateralMuscleWidget>
   }
 
   Widget _buildBar(double value) {
-    // Value 0.0 .. 1.0
     Color barColor;
     if (value < 0.5) {
       barColor = Color.lerp(Colors.yellow, Colors.orange, value * 2)!;
@@ -239,7 +238,7 @@ class _BilateralMuscleWidgetState extends State<BilateralMuscleWidget>
                   gradient: LinearGradient(
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
-                    colors: [barColor.withOpacity(0.5), barColor],
+                    colors: [barColor.withValues(alpha: 0.5), barColor],
                   ),
                 ),
               ),
@@ -272,17 +271,16 @@ class BilateralMusclePainter extends CustomPainter {
   final List<Path> leftPaths;
   final List<Path> rightPaths;
   final Rect contentBounds;
-  final List<double> intensities; // 0-5 Left, 6-11 Right
-  final List<Offset> heatmapPoints; // 6 Normalized points
+  final List<double> intensities;
+  final List<Offset> heatmapPoints;
 
   @override
   void paint(Canvas canvas, Size size) {
     if (contentBounds.isEmpty) return;
 
-    // Scale to fit contentBounds
     final double scaleX = size.width / contentBounds.width;
     final double scaleY = size.height / contentBounds.height;
-    final double scale = math.min(scaleX, scaleY) * 0.9; // 90% fit
+    final double scale = math.min(scaleX, scaleY) * 0.9;
 
     final double dragX = size.width / 2 - contentBounds.center.dx * scale;
     final double dragY = size.height / 2 - contentBounds.center.dy * scale;
@@ -291,23 +289,17 @@ class BilateralMusclePainter extends CustomPainter {
     canvas.translate(dragX, dragY);
     canvas.scale(scale, scale);
 
-    // 1. Draw Left Paths
     _drawGroup(canvas, leftPaths, intensities.sublist(0, 6));
-
-    // 2. Draw Right Paths
     _drawGroup(canvas, rightPaths, intensities.sublist(6, 12));
 
     canvas.restore();
   }
 
   void _drawGroup(Canvas canvas, List<Path> paths, List<double> values) {
-    // 2.1 Draw Muscle Shape (Fill)
     final Paint musclePaint = Paint()
-      ..color = Colors.grey[800]!
-          .withOpacity(0.5) // Slightly brighter/transparent than background
+      ..color = Colors.grey[800]!.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
 
-    // Combine for simpler bounds calc
     Rect groupBounds = Rect.zero;
     for (var p in paths) {
       canvas.drawPath(p, musclePaint);
@@ -316,8 +308,7 @@ class BilateralMusclePainter extends CustomPainter {
           : groupBounds.expandToInclude(p.getBounds());
     }
 
-    // 2. Draw Heatmaps
-    // Map normalized points to groupBounds
+    // Draw Heatmaps
     for (int i = 0; i < heatmapPoints.length; i++) {
       if (i >= values.length) break;
       final double intensity = values[i];
@@ -327,7 +318,6 @@ class BilateralMusclePainter extends CustomPainter {
       final double cx = groupBounds.left + norm.dx * groupBounds.width;
       final double cy = groupBounds.top + norm.dy * groupBounds.height;
 
-      // Color
       Color color;
       if (intensity < 0.5) {
         final t = intensity * 2;
@@ -337,14 +327,16 @@ class BilateralMusclePainter extends CustomPainter {
         color = Color.lerp(Colors.orange, Colors.red, t)!;
       }
 
-      final double radius =
-          groupBounds.width * 0.3; // Approx radius separate from view size
+      final double radius = groupBounds.width * 0.3;
 
       final Paint paint = Paint()
         ..shader = ui.Gradient.radial(
           Offset(cx, cy),
           radius,
-          [color.withOpacity(0.8 * intensity), color.withOpacity(0.0)],
+          [
+            color.withValues(alpha: 0.8 * intensity),
+            color.withValues(alpha: 0.0),
+          ],
           [0.0, 1.0],
         )
         ..blendMode = BlendMode.srcOver;
@@ -352,11 +344,11 @@ class BilateralMusclePainter extends CustomPainter {
       canvas.drawCircle(Offset(cx, cy), radius, paint);
     }
 
-    // 3. Draw Outline (on top of muscles for crisp edges)
+    // Draw Outline
     final Paint outlinePaint = Paint()
       ..color = Colors.white24
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0; // Scaled relative to the view
+      ..strokeWidth = 3.0;
 
     for (var p in paths) {
       canvas.drawPath(p, outlinePaint);

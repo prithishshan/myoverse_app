@@ -1,14 +1,12 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:app/widgets/bilateral_muscle_widget.dart'; // [NEW]
+import 'package:app/widgets/bilateral_muscle_widget.dart';
 import 'package:app/widgets/muscle_widget.dart';
-import 'package:app/widgets/sensor_array_widget.dart';
+// import 'package:app/experiements/sensor_array_widget.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:app/controllers/graph_controller.dart';
+// import 'package:app/controllers/graph_controller.dart';
 import 'package:flutter/material.dart' show Colors;
-import 'package:get/get.dart'; // [NEW]
-import 'package:app/controllers/placement_controller.dart'; // [NEW]
 
 class SensorReadoutPage extends StatefulWidget {
   const SensorReadoutPage({super.key});
@@ -23,9 +21,6 @@ class _SensorReadoutPageState extends State<SensorReadoutPage> {
 
   static const Color accentColor = Color(0xFFD17A4A);
   static const Color textColor = Colors.white;
-
-  final PlacementController placementController =
-      Get.find<PlacementController>(); // [NEW]
 
   // 6 Simulators for Raw Data
   final List<StreamController<double>> _rawControllers = [];
@@ -231,166 +226,161 @@ class _SensorReadoutPageState extends State<SensorReadoutPage> {
   Widget _buildBody() {
     // switch (_selectedView) {
     //   case 0:
-        // 1. Averaged Graph
-      //   return Center(
-      //     child: Container(
-      //       margin: const EdgeInsets.symmetric(horizontal: 24),
-      //       height: 200,
-      //       decoration: BoxDecoration(
-      //         color: surfaceColor,
-      //         borderRadius: BorderRadius.circular(16),
-      //         boxShadow: [
-      //           BoxShadow(
-      //             color: Colors.black.withOpacity(0.2),
-      //             blurRadius: 10,
-      //             offset: const Offset(0, 4),
-      //           ),
-      //         ],
-      //       ),
-      //       child: ClipRRect(
-      //         borderRadius: BorderRadius.circular(16),
-      //         child: SensorLineGraph(
-      //           streams: _avgStreams,
-      //           hz: 50,
-      //           windowSeconds: 2,
-      //           repaintFps: 20,
-      //           strokeWidth: 2,
-      //           padding: const EdgeInsets.all(12),
-      //           fixedMin: 0.0,
-      //           fixedMax: 1.0,
-      //           lineColors: const [
-      //             Color(0xFFFF4081),
-      //             Color(0xFF9C27B0),
-      //             Color(0xFF00E5FF),
-      //           ],
-      //         ),
-      //       ),
-      //     ),
-      //   );
-      // case 1:
-        // 2. Main Muscle Widget
-        return Center(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 24),
-            height: 300,
-            decoration: const BoxDecoration(color: Colors.transparent),
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: Obx(() {
-                  final placement = placementController.placementSelected.value;
-                  final isSvg = placement?.imageUrl.endsWith('.svg') ?? false;
-                  return MuscleWidget(
-                    streams: _rawStreams,
-                    avgStreams: _avgStreams,
-                    showRings: true,
-                    imageAsset:
-                        placement?.imageUrl ?? 'assets/body_model/shoulder.png',
-                    svgAsset: isSvg ? placement?.imageUrl : null,
-                    muscleId: placement?.id,
-                  );
-                }),
-              ),
+    // 1. Averaged Graph
+    //   return Center(
+    //     child: Container(
+    //       margin: const EdgeInsets.symmetric(horizontal: 24),
+    //       height: 200,
+    //       decoration: BoxDecoration(
+    //         color: surfaceColor,
+    //         borderRadius: BorderRadius.circular(16),
+    //         boxShadow: [
+    //           BoxShadow(
+    //             color: Colors.black.withOpacity(0.2),
+    //             blurRadius: 10,
+    //             offset: const Offset(0, 4),
+    //           ),
+    //         ],
+    //       ),
+    //       child: ClipRRect(
+    //         borderRadius: BorderRadius.circular(16),
+    //         child: SensorLineGraph(
+    //           streams: _avgStreams,
+    //           hz: 50,
+    //           windowSeconds: 2,
+    //           repaintFps: 20,
+    //           strokeWidth: 2,
+    //           padding: const EdgeInsets.all(12),
+    //           fixedMin: 0.0,
+    //           fixedMax: 1.0,
+    //           lineColors: const [
+    //             Color(0xFFFF4081),
+    //             Color(0xFF9C27B0),
+    //             Color(0xFF00E5FF),
+    //           ],
+    //         ),
+    //       ),
+    //     ),
+    //   );
+    // case 1:
+    // 2. Main Muscle Widget
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        height: 300,
+        decoration: const BoxDecoration(color: Colors.transparent),
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: MuscleWidget(
+              streams: _rawStreams,
+              avgStreams: _avgStreams,
+              showRings: true,
+              // imageAsset: 'assets/body_model/shoulder.png',
+              // svgAsset: null,
+              muscleId: null,
             ),
           ),
-        );
-      // case 2:
-      //   // 3. Raw Graph
-      //   return Center(
-      //     child: Container(
-      //       margin: const EdgeInsets.symmetric(horizontal: 24),
-      //       height: 200,
-      //       decoration: BoxDecoration(
-      //         color: surfaceColor,
-      //         borderRadius: BorderRadius.circular(16),
-      //         boxShadow: [
-      //           BoxShadow(
-      //             color: Colors.black.withOpacity(0.2),
-      //             blurRadius: 10,
-      //             offset: const Offset(0, 4),
-      //           ),
-      //         ],
-      //       ),
-      //       child: ClipRRect(
-      //         borderRadius: BorderRadius.circular(16),
-      //         child: SensorLineGraph(
-      //           streams: _rawStreams,
-      //           hz: 50,
-      //           windowSeconds: 2,
-      //           repaintFps: 20,
-      //           strokeWidth: 1.5,
-      //           padding: const EdgeInsets.all(12),
-      //           fixedMin: 0.0,
-      //           fixedMax: 1.0,
-      //           lineColors: const [
-      //             Color(0xFFFF4081),
-      //             Color(0xFFFF80AB),
-      //             Color(0xFF9C27B0),
-      //             Color(0xFFE040FB),
-      //             Color(0xFF00E5FF),
-      //             Color(0xFF84FFFF),
-      //           ],
-      //         ),
-      //       ),
-      //     ),
-      //   );
-      // case 3:
-      //   // 4. Neutral Muscle Widget
-      //   return Center(
-      //     child: Container(
-      //       margin: const EdgeInsets.symmetric(horizontal: 24),
-      //       height: 300,
-      //       decoration: const BoxDecoration(color: Colors.transparent),
-      //       child: AspectRatio(
-      //         aspectRatio: 1,
-      //         child: Obx(() {
-      //           final placement = placementController.placementSelected.value;
-      //           final isSvg = placement?.imageUrl.endsWith('.svg') ?? false;
-      //           return MuscleWidget(
-      //             streams: _rawStreams,
-      //             avgStreams: const [],
-      //             showRings: false,
-      //             imageAsset:
-      //                 placement?.imageUrl ??
-      //                 'assets/body_model/shoulder_neutral.png',
-      //             svgAsset: isSvg ? placement?.imageUrl : null,
-      //             muscleId: placement?.id,
-      //           );
-      //         }),
-      //       ),
-      //     ),
-      //   );
-      // case 4:
-      //   // 5. Sensor Array
-      //   return Center(
-      //     child: Column(
-      //       mainAxisSize: MainAxisSize.min,
-      //       children: [
-      //         const Text(
-      //           "Sensor Array Heatmap",
-      //           style: TextStyle(color: Colors.white54),
-      //         ),
-      //         const SizedBox(height: 16),
-      //         SensorArrayWidget(streams: _rawStreams),
-      //       ],
-      //     ),
-      //   );
-      // case 5:
-      //   // 6. Bilateral Widget
-      //   return Center(
-      //     child: Container(
-      //       margin: const EdgeInsets.symmetric(horizontal: 16),
-      //       height: 400,
-      //       decoration: const BoxDecoration(color: Colors.transparent),
-      //       child: BilateralMuscleWidget(
-      //         streams: _rawStreams,
-      //         avgStreams: _sideAvgStreams,
-      //       ),
-      //     ),
-      //   );
-      // default:
-      //   return const SizedBox();
+        ),
+      ),
+    );
+    // case 2:
+    //   // 3. Raw Graph
+    //   return Center(
+    //     child: Container(
+    //       margin: const EdgeInsets.symmetric(horizontal: 24),
+    //       height: 200,
+    //       decoration: BoxDecoration(
+    //         color: surfaceColor,
+    //         borderRadius: BorderRadius.circular(16),
+    //         boxShadow: [
+    //           BoxShadow(
+    //             color: Colors.black.withOpacity(0.2),
+    //             blurRadius: 10,
+    //             offset: const Offset(0, 4),
+    //           ),
+    //         ],
+    //       ),
+    //       child: ClipRRect(
+    //         borderRadius: BorderRadius.circular(16),
+    //         child: SensorLineGraph(
+    //           streams: _rawStreams,
+    //           hz: 50,
+    //           windowSeconds: 2,
+    //           repaintFps: 20,
+    //           strokeWidth: 1.5,
+    //           padding: const EdgeInsets.all(12),
+    //           fixedMin: 0.0,
+    //           fixedMax: 1.0,
+    //           lineColors: const [
+    //             Color(0xFFFF4081),
+    //             Color(0xFFFF80AB),
+    //             Color(0xFF9C27B0),
+    //             Color(0xFFE040FB),
+    //             Color(0xFF00E5FF),
+    //             Color(0xFF84FFFF),
+    //           ],
+    //         ),
+    //       ),
+    //     ),
+    //   );
+    // case 3:
+    //   // 4. Neutral Muscle Widget
+    //   return Center(
+    //     child: Container(
+    //       margin: const EdgeInsets.symmetric(horizontal: 24),
+    //       height: 300,
+    //       decoration: const BoxDecoration(color: Colors.transparent),
+    //       child: AspectRatio(
+    //         aspectRatio: 1,
+    //         child: Obx(() {
+    //           final placement = placementController.placementSelected.value;
+    //           final isSvg = placement?.imageUrl.endsWith('.svg') ?? false;
+    //           return MuscleWidget(
+    //             streams: _rawStreams,
+    //             avgStreams: const [],
+    //             showRings: false,
+    //             imageAsset:
+    //                 placement?.imageUrl ??
+    //                 'assets/body_model/shoulder_neutral.png',
+    //             svgAsset: isSvg ? placement?.imageUrl : null,
+    //             muscleId: placement?.id,
+    //           );
+    //         }),
+    //       ),
+    //     ),
+    //   );
+    // case 4:
+    //   // 5. Sensor Array
+    //   return Center(
+    //     child: Column(
+    //       mainAxisSize: MainAxisSize.min,
+    //       children: [
+    //         const Text(
+    //           "Sensor Array Heatmap",
+    //           style: TextStyle(color: Colors.white54),
+    //         ),
+    //         const SizedBox(height: 16),
+    //         SensorArrayWidget(streams: _rawStreams),
+    //       ],
+    //     ),
+    //   );
+    // case 5:
+    //   // 6. Bilateral Widget
+    //   return Center(
+    //     child: Container(
+    //       margin: const EdgeInsets.symmetric(horizontal: 16),
+    //       height: 400,
+    //       decoration: const BoxDecoration(color: Colors.transparent),
+    //       child: BilateralMuscleWidget(
+    //         streams: _rawStreams,
+    //         avgStreams: _sideAvgStreams,
+    //       ),
+    //     ),
+    //   );
+    // default:
+    //   return const SizedBox();
     // }
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:app/controllers/placement_controller.dart';
+import 'package:app/experiements/placement_controller.dart';
 import 'package:app/controllers/settings_controller.dart';
 import 'package:app/routes/app_routes.dart';
 
@@ -59,7 +59,7 @@ class PatchPlacementPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
